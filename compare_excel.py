@@ -18,13 +18,17 @@ def compare_sheet(src_excel_name, sheet_num, src, dst):
     style.pattern = pattern
 
     mark = False
-    for i in range(dst.nrows):
-        for j in range(dst.ncols):
-            dst_value =  dst.cell_value(i,j)
-            if i >= src.nrows or j >= src.ncols:
-                print ("[%d] row  [%d] col is not match, src_value is [null], dst_value is [%s]" % (i+1, j+1, dst_value))
-                continue
+    row_col_t_num_not_match = False
+    if src.nrows != dst.nrows or src.ncols != dst.ncols:
+        print ("sheet row/col total num is not match, src.nrows [%d] dst.nrows [%d] src.ncols [%d] dst.ncols[%d]" % (src.nrows, dst.nrows, src.ncols, dst.ncols))
+        row_col_t_num_not_match = True
 
+    max_i = src.nrows if src.nrows < dst.nrows else dst.nrows
+    max_j = src.ncols if src.ncols < dst.ncols else dst.ncols
+
+    for i in range(max_i):
+        for j in range(max_j):
+            dst_value =  dst.cell_value(i,j)
             src_value =  src.cell_value(i,j)
             if src_value != dst_value:
                 if type(src_value) == float and type(dst_value) == float:
@@ -41,10 +45,17 @@ def compare_sheet(src_excel_name, sheet_num, src, dst):
 
     if mark == True:
         pos = src_excel_name.rfind(".", 0, len(src_excel_name))
-        new_excel.save("./out/" + src_excel_name[0:pos] + "_marked.xls")
+        if row_col_t_num_not_match == True:
+            new_excel.save("./out/" + src_excel_name[0:pos] + "_marked_overlap.xls")
+        else:
+            new_excel.save("./out/" + src_excel_name[0:pos] + "_marked.xls")
+
         print("find different cell, update marked excel to out dir")
     else:
-        print ("complete match")
+        if row_col_t_num_not_match == True:
+            print ("overlap cell is complete match")
+        else:
+            print ("all cell is complete match")
 
 def compare_excel(src, dst):
     if src[0:2] != dst[0:2]:
@@ -68,8 +79,8 @@ def compare_excel(src, dst):
 
 if __name__ == "__main__":
 
-    src_file_list = os.listdir("./src/")
-    dst_file_list = os.listdir("./dst/")
+    src_file_list = sorted(os.listdir("./src/"))
+    dst_file_list = sorted(os.listdir("./dst/"))
 
     for i in range(len(dst_file_list)):
         print("compare [%s] with [%s]!" % (src_file_list[i], dst_file_list[i]))
